@@ -1,0 +1,66 @@
+---
+title: "PCA"
+author: "RA"
+date: "11/29/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE) 
+library(dplyr)
+# update input file location
+dat <- read.csv("F:/WSU/Class_work/Fall_2019/CpTS575/Project/output/tidy_data3.csv")
+
+```
+
+```{r, pca}
+names(dat)
+# isolating predictors 
+
+dat <- dat %>% 
+  mutate(Qsurf = Qg + Qh + Qle, SoilMoist0_200cm = SoilMoist0_10cm+ SoilMoist10_40cm+ SoilMoist40_100cm+  SoilMoist100_200cm)
+
+predictors <- dat[,c(-1,-2,-6,-7,-8,-14,-15,-16,-17,-22,-23,-24)] 
+
+#mean <- apply(predictors, 2, mean)
+#var <- apply(predictors, 2, var)
+
+pr.out=prcomp(predictors, scale=TRUE)
+names(pr.out)
+pr.out$center
+pr.out$scale
+pr.out$rotation
+dim(pr.out$x)
+
+#biplot(pr.out, scale=0)
+#pr.out$rotation=-pr.out$rotation
+#pr.out$x=-pr.out$x
+pr.out$sdev
+
+pr.var=pr.out$sdev^2
+pr.var
+
+pve=pr.var/sum(pr.var)
+pve
+
+#plot(pve, xlab="Principal Component", ylab="Proportion of Variance Explained", ylim=c(0,1),type='b')
+plot(cumsum(pve), xlab="Principal Component", ylab="Cumulative Proportion of Variance Explained", ylim=c(0,1),type='b')
+
+# normalizing predictor values
+
+for (i in 1 : length(pr.out$center)){
+predictors[,i] <- (predictors[,i] - pr.out$center[i])/(pr.out$scale[i])
+}
+
+pnorm <- as.matrix(predictors)
+# selecting only 7 principal components
+loads <- pr.out$rotation[,1:7]
+
+# principal component scores
+pcs <-  pnorm %*% loads
+
+pcs <- cbind(pcs, dat[,c(1,2,22)])
+write.csv(pcs,"data_7pc.csv",row.names = FALSE)
+
+```
+
